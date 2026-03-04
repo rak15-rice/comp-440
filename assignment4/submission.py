@@ -629,11 +629,25 @@ class SchedulingCSPConstructor:
                 return unit != 0
 
         # BEGIN_YOUR_CODE (our solution is 11 lines of code, but don't worry if you deviate from this)
+        for quarter in self.profile.quarters:
+            scheduled_courses = []
+            for request in self.profile.requests:
+                for courseId in request.cids:
+                    course_taken = (courseId,quarter)
+                    domain = list(range(self.bulletin.courses[courseId].minUnits, self.bulletin.courses[courseId].maxUnits + 1))
+                    domain.insert(0, 0)
+                    scheduled_courses.append(course_taken)
+                    #print(scheduled_courses)
+                    csp.add_variable(course_taken, domain)
+                    csp.add_binary_factor((request, quarter), course_taken, courseUnits)
 
+            sum_var = create_sum_variable(csp, quarter, scheduled_courses, self.profile.maxUnits)
+            csp.add_unary_factor(sum_var, lambda sum_var: self.profile.minUnits <= sum_var <= self.profile.maxUnits)
+                    
+                    
 
         # END_YOUR_CODE
-
-        raise Exception("Not implemented yet")        
+   
 
     def add_all_additional_constraints(self, csp: CSP) -> None:
         """
