@@ -4,6 +4,7 @@ import _PyPacwar
 import helpers
 from typing import Callable
 
+from testgenes1 import get_test_genes
 GENE_LEN = 50
 ALLELES = (0, 1, 2, 3)
 
@@ -81,8 +82,8 @@ def mutate(gene: list[int], mutation_rate: float):
         if random.random() < mutation_rate:
             gene[i] = random.choice([a for a in ALLELES if a != gene[i]])
 
-def genetic_algorithm(population: list[list[int]], should_halt: Callable[[int], bool], opponents: list[list[int]],
-                      mutation_rate = 0.1, survival_rate = 0.05, selection_k = 5, initial_k = 5):
+def genetic_algorithm(population: list[list[int]], should_halt: Callable[[int], bool], opponents_pool: list[list[int]],
+                      mutation_rate = 0.1, survival_rate = 0.05, selection_k = 5, pool_k = 5, population_k = 5):
     """
     Every generation, we select the top parent out of selection_k randomly selected genes. This parent gets combined with another parent chosen the same way.
     The top survival_rate percent of the parents get carried over anyways. initial_k is the number of opponents that the agent is evaluated against.
@@ -91,21 +92,28 @@ def genetic_algorithm(population: list[list[int]], should_halt: Callable[[int], 
     result_score = float('-inf')
     
     gen = 0
+    best_gene = None
     while True:
         scores = []
         
-        curr_opponents = random.sample(population, initial_k) + opponents
+        curr_opponents = helpers.sample_opponents(
+            opponents_pool,
+            population,
+            pool_k,
+            population_k,
+        )
         for gen_code in population:
             scores.append(evaluate(gen_code, curr_opponents))
         
-        if should_halt(gen, population, scores):
-            break
         
         best_gene = population[np.argmax(scores)]  
         best_score = max(scores)
         if best_score > result_score:
             result_score = best_score
             result_gene = best_gene.copy()
+            
+        if should_halt(gen, population, scores):
+            break
 
         print(helpers.seq_to_str(best_gene))
             
@@ -151,23 +159,38 @@ if __name__ == "__main__":
         
     def halt_after_n_generations(n: int):
         return lambda gen, population, scores: gen >= n
-
+        
+    opponents_pool = helpers.build_seed_opponent_pool(
+        extra_genes=get_test_genes()
+    )
 
     result_winners = []
     best_winners = []
     try:
         while len(result_winners) < 1:
+            prev_gene = [0] * 50
+            count = 0
+
             best_gene, result_gene = genetic_algorithm(
-                population=random_population(500),
-                should_halt=should_halt,
-                opponents=[],
+                random_population(200),
+                halt_after_n_generations(25),
+                opponents_pool,
                 mutation_rate=0.01,
-                survival_rate=0.05, 
+                survival_rate=0.05,
                 selection_k=10,
-                initial_k=4
+                pool_k=8,
+                population_k=4,
             )
+
             best_winners.append(best_gene)
             result_winners.append(result_gene)
+
+            opponents_pool = helpers.update_pool(
+                opponents_pool,
+                [best_gene, result_gene],
+                max_archive_size=200,
+            )
+
             print(helpers.seq_to_str(best_gene), helpers.seq_to_str(result_gene))
     except KeyboardInterrupt:
         pass

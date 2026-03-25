@@ -98,3 +98,95 @@ def seqs_to_strs(population: list[list[int]]) -> list[str]:
 def gene_diff(seq1: list[int], seq2: list[int]) -> int:
     """Returns the count of differing positions."""
     return sum(a != b for a, b in zip(seq1, seq2))
+
+
+import random
+
+GENE_LEN = 50
+ALLELES = (0, 1, 2, 3)
+
+def alternating_gene(a: int, b: int, n: int = GENE_LEN) -> list[int]:
+    return [a if i % 2 == 0 else b for i in range(n)]
+
+def repeating_block_gene(block: list[int], n: int = GENE_LEN) -> list[int]:
+    out = []
+    while len(out) < n:
+        out.extend(block)
+    return out[:n]
+
+def unique_genes(population: list[list[int]]) -> list[list[int]]:
+    seen = set()
+    result = []
+    for gene in population:
+        s = seq_to_str(gene)
+        if s not in seen:
+            seen.add(s)
+            result.append(gene.copy())
+    return result
+
+def build_seed_opponent_pool(extra_genes: list[list[int]] | None = None) -> list[list[int]]:
+    pool = [
+        [0] * GENE_LEN,
+        [1] * GENE_LEN,
+        [2] * GENE_LEN,
+        [3] * GENE_LEN,
+        alternating_gene(0, 1),
+        alternating_gene(1, 2),
+        alternating_gene(2, 3),
+        alternating_gene(0, 3),
+        repeating_block_gene([0, 1, 2, 3]),
+        repeating_block_gene([3, 2, 1, 0]),
+        repeating_block_gene([0, 0, 1, 1]),
+        repeating_block_gene([3, 3, 2, 2]),
+        repeating_block_gene([0, 0, 0, 1, 1, 1]),
+        repeating_block_gene([3, 3, 3, 2, 2, 2]),
+    ]
+
+    if extra_genes is not None:
+        pool.extend([g.copy() for g in extra_genes])
+
+    return unique_genes(pool)
+
+def sample_opponents(
+    archive: list[list[int]],
+    population: list[list[int]],
+    archive_k: int,
+    population_k: int,
+) -> list[list[int]]:
+    chosen = []
+
+    if archive:
+        chosen.extend(random.sample(archive, min(archive_k, len(archive))))
+
+    if population:
+        chosen.extend(random.sample(population, min(population_k, len(population))))
+
+    return unique_genes(chosen)
+
+def update_pool(
+    pool: list[list[int]],
+    new_genes: list[list[int]],
+    max_archive_size: int = 200,
+) -> list[list[int]]:
+    merged = unique_genes(pool + [g.copy() for g in new_genes])
+    if len(merged) <= max_archive_size:
+        return merged
+
+    fixed = []
+    others = []
+    fixed_strings = {
+        "0" * GENE_LEN,
+        "1" * GENE_LEN,
+        "2" * GENE_LEN,
+        "3" * GENE_LEN,
+    }
+
+    for gene in merged:
+        if seq_to_str(gene) in fixed_strings:
+            fixed.append(gene)
+        else:
+            others.append(gene)
+
+    random.shuffle(others)
+    kept = fixed + others[:max_archive_size - len(fixed)]
+    return unique_genes(kept)
