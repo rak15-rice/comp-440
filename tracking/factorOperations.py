@@ -113,7 +113,6 @@ def joinFactors(factors: List[Factor]):
     conditioned = functools.reduce(lambda x, y: x | y, setsOfConditioned).difference(unconditioned)
     
     new_factor = Factor(unconditioned, conditioned, next(iter(factors)).variableDomainsDict())
-    # TODO: Assign a bunch of probabilities.
     for assignments in new_factor.getAllPossibleAssignmentDicts():
         probability = 1                
         for factor in factors:
@@ -173,7 +172,23 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        unconditioned = factor.unconditionedVariables()
+        unconditioned.remove(eliminationVariable)
+        domains = factor.variableDomainsDict()
+        new_factor = Factor(unconditioned, factor.conditionedVariables(), domains)
+    
+        for assignments in new_factor.getAllPossibleAssignmentDicts():
+            print(assignments)
+            probability = 0            
+            for possibility in domains[eliminationVariable]:
+                probability += factor.getProbability({
+                    **assignments,
+                    eliminationVariable: possibility
+                })
+            
+            new_factor.setProbability(assignments, probability)
+        
+        return new_factor
         "*** END YOUR CODE HERE ***"
 
     return eliminate
