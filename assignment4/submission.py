@@ -644,8 +644,6 @@ class SchedulingCSPConstructor:
             sum_var = create_sum_variable(csp, quarter, scheduled_courses, self.profile.maxUnits)
             csp.add_unary_factor(sum_var, lambda sum_var: self.profile.minUnits <= sum_var <= self.profile.maxUnits)
                     
-                    
-
         # END_YOUR_CODE
    
 
