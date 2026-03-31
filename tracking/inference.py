@@ -56,19 +56,12 @@ def constructBayesNet(gameState: hunters.GameState):
     Y_RANGE = gameState.getWalls().height
     MAX_NOISE = 7
 
+    variables = []
+    edges = []
+    variableDomainsDict = {}
 
     "*** YOUR CODE HERE ***"
-    variables = [PAC, GHOST0, GHOST1, OBS0, OBS1]
-    edges = [(GHOST0, OBS0), (PAC, OBS0), (PAC, OBS1), (GHOST1, OBS1)]
-    all_positions = set(itertools.product(range(0, X_RANGE), range(0, Y_RANGE)))
-    obs_domain = range(0, X_RANGE + Y_RANGE + MAX_NOISE - 1)
-    variableDomainsDict = {
-        PAC: all_positions,
-        GHOST0: all_positions,
-        GHOST1: all_positions,
-        OBS0: obs_domain,
-        OBS1: obs_domain,
-    }
+    raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
     net = bn.constructEmptyBayesNet(variables, edges, variableDomainsDict)
@@ -330,7 +323,11 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        total_count = self.total()
+        if total_count == 0:
+            return
+        for key in self.keys():
+            self[key] = self[key] / total_count
         "*** END YOUR CODE HERE ***"
 
     def sample(self):
@@ -492,6 +489,7 @@ class InferenceModule:
         """
         Update beliefs based on the given distance observation and gameState.
         """
+        
         raise NotImplementedError
 
     def elapseTime(self, gameState):
@@ -593,7 +591,12 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        legal_positions = self.legalPositions
+        for i in range(self.numParticles):
+            position = legal_positions[i % len(legal_positions)]
+            self.particles.append(position)
+            
+   
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
@@ -605,7 +608,11 @@ class ParticleFilter(InferenceModule):
         This function should return a normalized distribution.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        result = DiscreteDistribution()
+        for particle in self.particles:
+            result[particle] += 1
+        result.normalize()
+        return result
         "*** END YOUR CODE HERE ***"
     
     ########### ########### ###########
@@ -625,7 +632,22 @@ class ParticleFilter(InferenceModule):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        pac_pos = gameState.getPacmanPosition()
+        beliefs = DiscreteDistribution()
+        for particle in self.particles:
+            belief = self.getObservationProb(observation, pac_pos, particle, self.getJailPosition())
+            beliefs[particle] += belief
+            
+        if beliefs.total() == 0:
+            self.initializeUniformly(gameState)
+            return
+        
+        self.particles = []
+        for _ in range(self.numParticles):
+            self.particles.append(beliefs.sample())
+
+   
+        
         "*** END YOUR CODE HERE ***"
     
     ########### ########### ###########
@@ -638,6 +660,11 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        result = []
+        for particle in self.particles:
+            temp_distr = self.getPositionDistribution(gameState, particle)
+            temp_particle = temp_distr.sample()
+            result.append(temp_particle)
+        self.particles = result
         "*** END YOUR CODE HERE ***"
 
