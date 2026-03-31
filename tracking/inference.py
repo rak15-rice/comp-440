@@ -188,8 +188,21 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
                                    set(evidenceDict.keys())
             eliminationOrder = sorted(list(eliminationVariables))
 
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        "*** YOUR CODE HERE ***"     
+        currentFactorsList = bayesNet.getAllCPTsWithEvidence(evidenceDict)            
+
+        for to_eliminate in eliminationOrder:
+            currentFactorsList, joinedFactor = joinFactorsByVariable(currentFactorsList, to_eliminate)
+            # We skip the factor if it only has one unconditioned variable
+            if len(joinedFactor.unconditionedVariables()) == 1:
+                continue
+            
+            joinedFactor = eliminate(joinedFactor, to_eliminate)
+            currentFactorsList.append(joinedFactor)
+        
+        fullJoint = joinFactors(currentFactorsList)
+        
+        return normalize(fullJoint)
         "*** END YOUR CODE HERE ***"
 
 
@@ -359,7 +372,14 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        val = random.random() * self.total()
+        total = 0
+        for key, prob in self.items():
+            total += prob
+            if val < total:
+                return key
+        
+        raise Exception("Values didn't sum to one.")
         "*** END YOUR CODE HERE ***"
 
 
@@ -548,7 +568,13 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # P(position|observation) = P(observation|position)*P(position) / P(observation)
+        # self.getObservationProb(observation, gameState.getPacmanPosition(), ghostPosition, self.getJailPosition())
+        # The remaining question: What is the probability of getting that observation, all else being equal?
+        for position, probability in self.beliefs.items():
+            # Since the probability of getting that observation is the same for all of them, we don't have to divide it out; it won't change the relative rankings.
+            self.beliefs[position] = probability * self.getObservationProb(observation, gameState.getPacmanPosition(), position, self.getJailPosition())
+            
         "*** END YOUR CODE HERE ***"
         self.beliefs.normalize()
     

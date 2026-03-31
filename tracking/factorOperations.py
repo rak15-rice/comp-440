@@ -178,7 +178,6 @@ def eliminateWithCallTracking(callTrackingList=None):
         new_factor = Factor(unconditioned, factor.conditionedVariables(), domains)
     
         for assignments in new_factor.getAllPossibleAssignmentDicts():
-            print(assignments)
             probability = 0            
             for possibility in domains[eliminationVariable]:
                 probability += factor.getProbability({
