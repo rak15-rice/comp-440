@@ -93,16 +93,36 @@ def joinFactors(factors: List[Factor]):
     if len(factors) > 1:
         intersect = functools.reduce(lambda x, y: x & y, setsOfUnconditioned)
         if len(intersect) > 0:
-            print("Factor failed joinFactors typecheck: ", factor)
+            print("Factor failed joinFactors typecheck: ", intersect[0])
             raise ValueError("unconditionedVariables can only appear in one factor. \n"
                     + "unconditionedVariables: " + str(intersect) + 
                     "\nappear in more than one input factor.\n" + 
                     "Input factors: \n" +
                     "\n".join(map(str, factors)))
 
+    # For f(X, y | Z, w):
+    # Z and w are conditioned, while X and y are unconditioned.
+    # You look up the probability according to what value X and Z get.
+    
+    # It's unconditioned if it appears as unconditioned in any f the inputs.
+    # It's conditioned if it appears as conditioned in an input but never as unconditioned.
 
     "*** YOUR CODE HERE ***"
-    raiseNotDefined()
+    unconditioned = functools.reduce(lambda x, y: x | y, setsOfUnconditioned)
+    setsOfConditioned = [set(factor.conditionedVariables()) for factor in factors]
+    conditioned = functools.reduce(lambda x, y: x | y, setsOfConditioned).difference(unconditioned)
+    
+    new_factor = Factor(unconditioned, conditioned, next(iter(factors)).variableDomainsDict())
+    # TODO: Assign a bunch of probabilities.
+    for assignments in new_factor.getAllPossibleAssignmentDicts():
+        probability = 1                
+        for factor in factors:
+            probability *= factor.getProbability(assignments)
+        
+        new_factor.setProbability(assignments, probability)
+                
+    
+    return new_factor
     "*** END YOUR CODE HERE ***"
 
 ########### ########### ###########
