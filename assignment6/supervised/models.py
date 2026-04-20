@@ -10,7 +10,7 @@ Your code will not pass if the gradescope autograder detects any changed imports
 """
 import torch
 from torch.nn import Parameter, Linear, Sequential, ReLU
-from torch import optim, tensor, tensordot, ones, matmul
+from torch import optim, tensor, tensordot, ones, matmul, Tensor
 from torch.nn.functional import cross_entropy, relu, mse_loss, softmax
 from torch import movedim
 
@@ -103,9 +103,12 @@ class RegressionModel(Module):
         "*** YOUR CODE HERE ***"
         super().__init__()
         # 2-3 lines of code expected
+        hidden_size = 20
+        self.layers = Sequential(
+            Linear(1, hidden_size), ReLU(), Linear(hidden_size, 1)
+        )
 
-
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         """
         Runs the model for a batch of examples.
 
@@ -115,9 +118,9 @@ class RegressionModel(Module):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
-        # 1 line of code expected
+        return self.layers(x)
     
-    def get_loss(self, x, y):
+    def get_loss(self, x: Tensor, y: Tensor):
         """
         Computes the loss for a batch of examples.
 
@@ -128,7 +131,7 @@ class RegressionModel(Module):
         Returns: a tensor of size 1 containing the loss
         """
         "*** YOUR CODE HERE ***"
-        # 1 line of code expected
+        return mse_loss(self.forward(x), y)
         
 
     def train(self, dataset):
@@ -156,7 +159,17 @@ class RegressionModel(Module):
         #   - propagate loss backward
         #   - make the optimizer step to update parameters
             
-
+        dataloader = DataLoader(dataset, batch_size=50, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=0.03)
+        loss = ones(1, 1)
+        while loss.item() > 0.01:
+            for batch in dataloader:
+                optimizer.zero_grad()
+                loss = self.get_loss(batch["x"], batch["label"])
+                loss.backward()
+                optimizer.step()
+            
+            print(loss.item())
 
 
 
