@@ -38,7 +38,7 @@ class PerceptronModel(Module):
         super(PerceptronModel, self).__init__()
         
         "*** YOUR CODE HERE ***"
-        # 1 line expected
+        self.w = Parameter(ones(1, dimensions))
         
 
     def get_weights(self):
@@ -58,7 +58,7 @@ class PerceptronModel(Module):
         The pytorch function `tensordot` may be helpful here.
         """
         "*** YOUR CODE HERE ***"
-        # 1 line expected
+        return tensordot(self.w, x)
 
     def get_prediction(self, x):
         """
@@ -67,8 +67,7 @@ class PerceptronModel(Module):
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
-        # 1 line expected
-
+        return 1 if self.run(x) >= 0 else -1
 
     def train(self, dataset):
         """
@@ -82,7 +81,15 @@ class PerceptronModel(Module):
         with no_grad():
             dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
             "*** YOUR CODE HERE ***"
-            # 10-11 lines expected
+            while True:
+                mistakes = 0
+                for batch in dataloader:
+                    if self.get_prediction(batch["x"]) != batch["label"]:
+                        mistakes += 1
+                        self.w += batch["x"] * batch["label"]
+                
+                if mistakes == 0:
+                    break
 
 
 class RegressionModel(Module):
@@ -413,7 +420,7 @@ class Attention(Module):
         """
         self.k_layer = Linear(layer_size, layer_size)
         self.q_layer = Linear(layer_size, layer_size)
-        self.v_layer = Linear(layer_size,layer_size
+        self.v_layer = Linear(layer_size,layer_size)
 
         #Masking part of attention layer
         self.register_buffer("mask", torch.tril(torch.ones(block_size, block_size))
