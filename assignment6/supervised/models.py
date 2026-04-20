@@ -162,18 +162,12 @@ class RegressionModel(Module):
         dataloader = DataLoader(dataset, batch_size=50, shuffle=True)
         optimizer = optim.Adam(self.parameters(), lr=0.03)
         loss = ones(1, 1)
-        while loss.item() > 0.01:
+        while loss.item() > 0.008:
             for batch in dataloader:
                 optimizer.zero_grad()
                 loss = self.get_loss(batch["x"], batch["label"])
                 loss.backward()
                 optimizer.step()
-            
-            print(loss.item())
-
-
-
-
 
 
 class DigitClassificationModel(Module):
@@ -195,10 +189,16 @@ class DigitClassificationModel(Module):
         super().__init__()
         input_size = 28 * 28
         output_size = 10
+        hidden_layer1 = 100
+        hidden_layer2 = 40
         "*** YOUR CODE HERE ***"
-        # about 4 lines expected. consider two hidden layers
-
-
+        self.model = Sequential(
+            Linear(input_size, hidden_layer1),
+            ReLU(),
+            Linear(hidden_layer1, hidden_layer2),
+            ReLU(),
+            Linear(hidden_layer2, output_size),
+        )
 
     def run(self, x):
         """
@@ -215,9 +215,8 @@ class DigitClassificationModel(Module):
                 (also called logits)
         """
         """ YOUR CODE HERE """
-        # 1 line expected
- 
-
+        return self.model(x)
+    
     def get_loss(self, x, y):
         """
         Computes the loss for a batch of examples.
@@ -232,16 +231,25 @@ class DigitClassificationModel(Module):
         Returns: a loss tensor
         """
         """ YOUR CODE HERE """
-        # use cross entropy loss. 1 line expected
+        return cross_entropy(self.run(x), y)
     
-        
-
     def train(self, dataset):
         """
         Trains the model.
         """
         """ YOUR CODE HERE """
         # 11-12 lines expected
+        
+        dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        while dataset.get_validation_accuracy() < 0.975:
+            for batch in dataloader:
+                optimizer.zero_grad()
+                loss = self.get_loss(batch["x"], batch["label"])
+                loss.backward()
+                optimizer.step()
+            
+            print(dataset.get_validation_accuracy())
 
 
 class LanguageIDModel(Module):
