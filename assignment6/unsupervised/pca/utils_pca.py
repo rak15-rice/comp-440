@@ -13,11 +13,13 @@ def pca(X):
     # compute the covariance of X and then use the
     # svd function to compute the eigenvectors and
     # eigenvalues of the covariance matrix
-
+    
     # When computing the covariance remember to divide by
     # the number of rows in X
     
-    
+    num_rows = X.shape[0]
+    covar_mat = (X.T @ X) / num_rows
+    U, S, V = np.linalg.svd(covar_mat)
 
     ########################################################
     #           END YOUR CODE                              #
@@ -39,8 +41,8 @@ def project_data(X,U,K):
     #########################################################
     #         YOUR CODE HERE                                #
     #########################################################
-    
-    
+    new_U = U[:, :K]
+    Z = X @ new_U
     
     ########################################################
     #           END YOUR CODE                              #
@@ -60,7 +62,8 @@ def recover_data(Z,U,K):
     #########################################################
     #         YOUR CODE HERE                                #
     #########################################################
-    
+    new_U = U[:, :K]
+    X_rec = Z @ new_U.T
     
 
     ########################################################
