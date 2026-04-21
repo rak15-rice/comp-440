@@ -22,10 +22,9 @@ def find_closest_centroids(X, centroids):
     #               closest to example i. Hence, it should be a value in the        #
     #               range 0..K-1                                                    #
     ################################################################################
-
-    
-    
-
+    for row in range(X.shape[0]):
+        distances = np.sum((X[row] - centroids)**2, axis=1)
+        idx[row] = np.argmin(distances)
 
     ################################################################################
     #             END OF YOUR CODE                                                 #
@@ -55,8 +54,10 @@ def compute_centroids(X, idx, K):
     #               should contain the mean of the data points assigned to        #
     #               centroid i.                                                   #
     ###############################################################################
-
-   
+    for i in range(K):
+        points = X[idx == i]
+        if len(points) > 0:
+            centroids[i] = np.mean(points, axis=0)
 
     ################################################################################
     #             END OF YOUR CODE                                                 #
@@ -74,8 +75,8 @@ def kmeans_init_centroids(X,K):
     #######################= YOUR CODE HERE ######################################
     #  Construct a random permutation of the examples and pick the first K items  #                                              
     ###############################################################################
-    
-    
+    indices = np.random.choice(X.shape[0], K, replace=False)
+    centroids = X[indices[:K]]
     
     ################################################################################
     #             END OF YOUR CODE                                                 #
