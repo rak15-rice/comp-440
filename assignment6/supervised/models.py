@@ -10,10 +10,11 @@ Your code will not pass if the gradescope autograder detects any changed imports
 """
 import torch
 from torch.nn import Parameter, Linear, Sequential, ReLU
-from torch import optim, tensor, tensordot, ones, matmul, Tensor
+from torch import optim, tensor, tensordot, ones, zeros, matmul, Tensor
 from torch.nn.functional import cross_entropy, relu, mse_loss, softmax
 from torch import movedim
 
+import math
 
 class PerceptronModel(Module):
     def __init__(self, dimensions):
@@ -249,8 +250,6 @@ class DigitClassificationModel(Module):
                 loss.backward()
                 optimizer.step()
             
-            print(dataset.get_validation_accuracy())
-
 
 class LanguageIDModel(Module):
     """
@@ -356,9 +355,15 @@ def Convolve(input: tensor, weight: tensor):
     """
     input_tensor_dimensions = input.shape
     weight_dimensions = weight.shape
-    Output_Tensor = tensor(())
+    Output_Tensor = zeros(input_tensor_dimensions[0] - weight_dimensions[0] + 1,
+                          input_tensor_dimensions[1] - weight_dimensions[1] + 1)
     "*** YOUR CODE HERE ***"
-    
+    output_dimensions = Output_Tensor.shape
+    # We can loop over the weights and sum the input offset by that amount.
+    for i in range(weight_dimensions[0]):
+        for j in range(weight_dimensions[1]):
+            Output_Tensor += weight[i, j] * input[i:i+output_dimensions[0], j:j+output_dimensions[1]]
+
     "*** End Code ***"
     return Output_Tensor
 
@@ -376,7 +381,6 @@ class DigitConvolutionalModel(Module):
     as it will be run on preset weights.
     """
     
-
     def __init__(self):
         # Initialize your model parameters here
         super().__init__()
@@ -387,8 +391,12 @@ class DigitConvolutionalModel(Module):
         # 2 lines expected.
         # Set up a linear layer that takes input the result of 3x3 convolution applied to 28x28 input and an output size o
         # Set up an output Linear layer with input size o and output size 10
-
-
+        o = 50
+        self.model = Sequential(
+            # 28-by-28 with a 3-by-3 weights matrix is 26-by-26
+            Linear(26 * 26, o),
+            Linear(o, 10)
+        )
 
     def run(self, x):
         return self(x)
@@ -403,6 +411,7 @@ class DigitConvolutionalModel(Module):
         x = x.flatten(start_dim=1)
         """ YOUR CODE HERE """
         # 2 lines expected. apply Relu to first hidden layer and then pass the output of that to the output_layer
+        return self.model(relu(x))
 
     def get_loss(self, x, y):
         """
@@ -418,16 +427,21 @@ class DigitConvolutionalModel(Module):
         Returns: a loss tensor
         """
         """ YOUR CODE HERE """
-        # 1 line expected
+        return cross_entropy(self.forward(x), y)
      
-        
-
     def train(self, dataset):
         """
         Trains the model.
         """
         """ YOUR CODE HERE """
-        # about 12 lines 
+        dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        while dataset.get_validation_accuracy() < 0.85:
+            for batch in dataloader:
+                optimizer.zero_grad()
+                loss = self.get_loss(batch["x"], batch["label"])
+                loss.backward()
+                optimizer.step()
 
 
 class Attention(Module):
@@ -441,7 +455,7 @@ class Attention(Module):
         """
         self.k_layer = Linear(layer_size, layer_size)
         self.q_layer = Linear(layer_size, layer_size)
-        self.v_layer = Linear(layer_size,layer_size)
+        self.v_layer = Linear(layer_size, layer_size)
 
         #Masking part of attention layer
         self.register_buffer("mask", torch.tril(torch.ones(block_size, block_size))
@@ -466,6 +480,11 @@ class Attention(Module):
         B, T, C = input.size()
 
         """YOUR CODE HERE"""
-        # about 5 lines
+        Q = self.q_layer(input)
+        K = self.k_layer(input)
+        V = self.v_layer(input)
+        attention = matmul(K, Q.transpose(-2, -1)) / math.sqrt(C)
+        masked = attention.masked_fill(self.mask[:,:,:T,:T] == 0, float('-inf'))[0]
+        return matmul(softmax(masked, dim=-1), V)
 
      
