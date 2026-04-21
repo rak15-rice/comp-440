@@ -35,7 +35,10 @@ class Transformer_Block(nn.Module):
 
     def forward(self, x):
         """YOUR CODE HERE"""
-
+        attention_and_input = self.norm_1(self.attn_block(x) + x)
+        return self.norm_2(torch.relu(
+            self.linear_1(attention_and_input)) + attention_and_input
+        )
        
 
 class Character_GPT(nn.Module):
@@ -45,11 +48,9 @@ class Character_GPT(nn.Module):
         self.block_size = block_size
         self.embed = nn.Embedding(vocab_size, n_embd) #Embedding layer, think of this as similar to a linear layer
 
-        
         self.transformer_blocks = nn.ModuleList([Transformer_Block(n_embd, block_size) for _ in range(n_layer)]) #You can treat this as a python list
         self.norm = nn.LayerNorm(n_embd) #Normalization Layer
         self.output_layer = nn.Linear(n_embd, vocab_size, bias=False)
-
 
 
     def get_loss(self, input, target):
@@ -69,7 +70,11 @@ class Character_GPT(nn.Module):
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
 
         """YOUR CODE HERE"""
-
+        output = self.embed(input)
+        for transformer in self.transformer_blocks:
+            output = transformer(output)
+        
+        return self.output_layer(self.norm(output))
 
     @torch.no_grad()
     def generate(self, idx, max_new_tokens):
