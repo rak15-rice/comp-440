@@ -38,14 +38,9 @@ The final submitted gene was generated with these settings:
 
 Run commands from inside this folder.
 
-Generate genes:
-
-python geneticEvolution.py
-
-
-Rank the gene bank against the evaluation pool:
-
-python rank_gene_bank_vs_validation.py
+1. `python setup.py build_ext --inplace`
+1. Generate genes: `python geneticEvolution.py`
+1. Rank the gene bank against the evaluation pool: `python rank_gene_bank_vs_validation.py`
 
   The results of the rankings are written to:
   gene_bank_vs_validation_rankings.txt
